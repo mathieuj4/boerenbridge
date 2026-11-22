@@ -1,0 +1,37 @@
+name: Build Windows program
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy pyinstaller
+      - name: Tests
+        run: |
+          python test_engine.py
+          python test_new.py
+      - name: Build exe
+        run: pyinstaller --onefile --name Boerenbridge --add-data "ui;ui" --add-data "models;models" --collect-submodules numpy play.py
+      - name: Smoke test the exe
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath dist\Boerenbridge.exe -ArgumentList "--no-browser","--port","8765" -PassThru
+          Start-Sleep -Seconds 8
+          $bots = Invoke-RestMethod http://localhost:8765/api/bots
+          if ($bots.Count -lt 8) { throw "bots missing" }
+          $body = '{"players":3,"opponents":["learned-a","learned-b"],"seat":0,"speed":"fast","seed":"1"}'
+          Invoke-RestMethod -Method Post -Uri http://localhost:8765/api/new -Body $body -ContentType "application/json"
+          Start-Sleep -Seconds 3
+          $st = Invoke-RestMethod http://localhost:8765/api/state
+          if ($st.status -eq "error") { throw $st.error }
+          Stop-Process -Id $p.Id -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Boerenbridge-windows
+          path: dist/Boerenbridge.exe
