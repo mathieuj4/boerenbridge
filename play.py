@@ -290,7 +290,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path in ("/", "/index.html"):
-            with open(os.path.join(BASE, "ui", "index.html"), "r", encoding="utf-8") as f:
+            page_path = os.path.join(BASE, "ui", "index.html")
+            if not os.path.exists(page_path):
+                page_path = os.path.join(BASE, "index.html")
+            with open(page_path, "r", encoding="utf-8") as f:
                 page = f.read()
             bots = [dict(key=k, label=v[0], desc=v[1]) for k, v in BOTS.items()]
             page = page.replace("/*BOTS*/[]", json.dumps(bots))     # the page needs no second request to list the bots

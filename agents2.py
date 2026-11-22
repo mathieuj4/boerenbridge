@@ -15,7 +15,8 @@ from planner import Planner
 from valuenet import ValueSearch
 
 import sys
-MODELS = os.path.join(getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__))), "models")
+_BASE = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+MODELS = os.path.join(_BASE, "models") if os.path.isdir(os.path.join(_BASE, "models")) else _BASE
 _cache = {}
 
 
